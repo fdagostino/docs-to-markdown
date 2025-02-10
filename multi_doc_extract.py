@@ -116,8 +116,7 @@ async def crawl_all_docs(
     else:
         content_filter = PruningContentFilter(
             threshold=0.5,
-            min_word_threshold=30,
-            verbose=False
+            min_word_threshold=30
         )
 
     run_cfg = CrawlerRunConfig(
@@ -148,11 +147,12 @@ async def crawl_all_docs(
 
             batch_urls = [b[0] for b in batch]
 
-            async for result in await crawler.arun_many(
+            results = await crawler.arun_many(
                 urls=batch_urls,
                 config=run_cfg,
                 dispatcher=dispatcher
-            ):
+            )
+            for result in results:
                 if result.success:
                     # Identificar la profundidad
                     idx = batch_urls.index(result.url)

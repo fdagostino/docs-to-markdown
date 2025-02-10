@@ -21,11 +21,19 @@ Requisitos:
 import os
 import sys
 import asyncio
+import time
 from urllib.parse import urlparse, urljoin
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.panel import Panel
+from rich.table import Table
 
 # Cargar variables de entorno
 load_dotenv()
+
+# Configurar consola rica
+console = Console()
 
 # Import principal de Crawl4AI
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
@@ -36,8 +44,42 @@ from crawl4ai.async_dispatcher import MemoryAdaptiveDispatcher
 try:
     from crawl4ai.content_filter_strategy import LLMContentFilter, PruningContentFilter
 except ImportError:
-    print("Necesitas instalar crawl4ai[all] para usar content_filter_strategy.")
+    console.print("[red]Error:[/] Necesitas instalar crawl4ai[all] para usar content_filter_strategy.")
     sys.exit(1)
+
+class CrawlStats:
+    def __init__(self):
+        self.total_urls = 0
+        self.processed_urls = 0
+        self.success_urls = 0
+        self.failed_urls = 0
+        self.start_time = time.time()
+    
+    def add_url(self):
+        self.total_urls += 1
+    
+    def url_processed(self, success: bool):
+        self.processed_urls += 1
+        if success:
+            self.success_urls += 1
+        else:
+            self.failed_urls += 1
+    
+    def get_elapsed_time(self):
+        return time.time() - self.start_time
+    
+    def display(self):
+        table = Table(title="Crawling Statistics")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", style="green")
+        
+        table.add_row("Total URLs", str(self.total_urls))
+        table.add_row("Processed URLs", str(self.processed_urls))
+        table.add_row("Successful", str(self.success_urls))
+        table.add_row("Failed", str(self.failed_urls))
+        table.add_row("Elapsed Time", f"{self.get_elapsed_time():.2f}s")
+        
+        console.print(table)
 
 def is_same_domain(base_domain: str, link: str) -> bool:
     """
@@ -85,6 +127,15 @@ async def crawl_all_docs(
     - output_dir: carpeta raíz de salida (default desde .env)
     - use_llm: True => LLMContentFilter, False => PruningContentFilter
     """
+    # Mostrar configuración inicial
+    console.print(Panel.fit(
+        f"[bold green]Starting crawler[/]\n"
+        f"URL: [cyan]{start_url}[/]\n"
+        f"Depth: [cyan]{max_depth or os.getenv('MAX_DEPTH', 2)}[/]\n"
+        f"Output: [cyan]{output_dir or os.getenv('OUTPUT_DIR', 'docs_outputs')}[/]\n"
+        f"Filter: [cyan]{'LLM' if use_llm else 'Heuristic'}[/]"
+    ))
+
     # Usar valores del .env como defaults
     if max_depth is None:
         max_depth = int(os.getenv("MAX_DEPTH", 2))
@@ -96,8 +147,13 @@ async def crawl_all_docs(
 
     visited = set()
     to_crawl = [(start_url, 0)]
+    
+    # Inicializar estadísticas
+    stats = CrawlStats()
+    stats.add_url()  # URL inicial
 
     browser_cfg = BrowserConfig(headless=True, verbose=False)
+    console.print("[bold blue]Initializing browser...[/]")
 
     # Definir content filter
     if use_llm:
@@ -132,54 +188,73 @@ async def crawl_all_docs(
     os.makedirs(output_dir, exist_ok=True)
 
     async with AsyncWebCrawler(config=browser_cfg) as crawler:
-        while to_crawl:
-            # Tomamos un batch de 5
-            batch = []
-            while to_crawl and len(batch) < 5:
-                url, depth = to_crawl.pop(0)
-                if url in visited:
-                    continue
-                visited.add(url)
-                batch.append((url, depth))
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            console=console
+        ) as progress:
+            task_crawl = progress.add_task("[cyan]Crawling...", total=None)
+            
+            while to_crawl:
+                # Tomamos un batch de 5
+                batch = []
+                while to_crawl and len(batch) < 5:
+                    url, depth = to_crawl.pop(0)
+                    if url in visited:
+                        continue
+                    visited.add(url)
+                    batch.append((url, depth))
 
-            if not batch:
-                break
+                if not batch:
+                    break
 
-            batch_urls = [b[0] for b in batch]
+                batch_urls = [b[0] for b in batch]
+                progress.update(task_crawl, description=f"[cyan]Processing {len(batch)} URLs...")
 
-            results = await crawler.arun_many(
-                urls=batch_urls,
-                config=run_cfg,
-                dispatcher=dispatcher
-            )
-            for result in results:
-                if result.success:
-                    # Identificar la profundidad
-                    idx = batch_urls.index(result.url)
-                    current_depth = batch[idx][1]
+                results = await crawler.arun_many(
+                    urls=batch_urls,
+                    config=run_cfg,
+                    dispatcher=dispatcher
+                )
+                for result in results:
+                    if result.success:
+                        console.print(f"[green]✓[/] {result.url}")
+                        stats.url_processed(True)
+                        
+                        # Identificar la profundidad
+                        idx = batch_urls.index(result.url)
+                        current_depth = batch[idx][1]
 
-                    # Markdown final (fit_markdown o raw)
-                    if use_llm:
-                        md = result.markdown_v2.fit_markdown or result.markdown
+                        # Markdown final (fit_markdown o raw)
+                        if use_llm:
+                            md = result.markdown_v2.fit_markdown or result.markdown
+                        else:
+                            md = result.markdown or ""
+
+                        # Generar ruta local replicando path
+                        local_md_file = build_local_filepath(output_dir, result.url)
+                        with open(local_md_file, "w", encoding="utf-8") as f:
+                            f.write(md)
+
+                        if current_depth < max_depth:
+                            # Explorar más links internos
+                            in_links = result.links.get("internal", [])
+                            next_depth = current_depth + 1
+                            for link_obj in in_links:
+                                href = link_obj["href"]
+                                abs_url = urljoin(result.url, href)
+                                if is_same_domain(base_domain, abs_url) and abs_url not in visited:
+                                    to_crawl.append((abs_url, next_depth))
+                                    stats.add_url()
                     else:
-                        md = result.markdown or ""
+                        console.print(f"[red]✗[/] {result.url} => {result.error_message}")
+                        stats.url_processed(False)
 
-                    # Generar ruta local replicando path
-                    local_md_file = build_local_filepath(output_dir, result.url)
-                    with open(local_md_file, "w", encoding="utf-8") as f:
-                        f.write(md)
-
-                    if current_depth < max_depth:
-                        # Explorar más links internos
-                        in_links = result.links.get("internal", [])
-                        next_depth = current_depth + 1
-                        for link_obj in in_links:
-                            href = link_obj["href"]
-                            abs_url = urljoin(result.url, href)
-                            if is_same_domain(base_domain, abs_url) and abs_url not in visited:
-                                to_crawl.append((abs_url, next_depth))
-                else:
-                    print("[ERROR]", result.url, "=>", result.error_message)
+    # Mostrar estadísticas finales
+    console.print("\n[bold green]Crawling completed![/]")
+    stats.display()
 
 def parse_args():
     import argparse

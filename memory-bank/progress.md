@@ -4,9 +4,9 @@
 1. **Core Functionality**
    - [x] BFS crawling implementation
    - [x] Content filtering (basic)
-   - [x] Directory structure preservation
-   - [x] Environment variable configuration
-   - [x] Command line interface
+   - [x] Directory structure preservation with named folders
+   - [x] Environment variable configuration (MAX_DEPTH, OUTPUT_DIR)
+   - [x] Command line interface with --doc_name
    - [x] Enhanced console logging with progress bars
    - [x] Real-time crawling statistics
    - [x] URL processing status tracking
@@ -18,6 +18,12 @@
    - [x] Browser automation setup
    - [x] Memory Bank initialization
 
+3. **Recent Updates**
+   - [x] Script renamed to docs-to-markdown.py
+   - [x] Moved configuration to .env
+   - [x] Added support for multiple documentation sets
+   - [x] Enhanced directory structure organization
+
 ## In Progress
 1. **Performance Optimization**
    - [ ] Rate limiting implementation
@@ -28,6 +34,7 @@
    - [x] Gluestack documentation crawling
    - [x] Content filter validation
    - [x] Directory structure verification
+   - [x] Multiple documentation sets support
 
 ## Known Issues
 1. **Error Handling**
@@ -67,7 +74,12 @@
    - [x] Error handling
    - [x] Testing with gluestack
 
-3. **Version 0.3** (Planned)
+3. **Version 0.3** (Current)
+   - [x] Script renaming and reorganization
+   - [x] Multiple documentation support
+   - [x] Environment-based configuration
+
+4. **Version 0.4** (Planned)
    - [ ] Rate limiting
    - [ ] Retry mechanism
    - [ ] Performance improvements

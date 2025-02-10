@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-multi_doc_extract.py
+docs-to-markdown.py
 
 Implementación de un crawler BFS multi-URL con Crawl4AI para extraer documentación.
 - Sigue enlaces internos del mismo dominio, evita bucles (visited)
@@ -10,8 +10,8 @@ Implementación de un crawler BFS multi-URL con Crawl4AI para extraer documentac
 - Replica la estructura de directorios del sitio en la carpeta de salida .md
 
 Modo de uso (ejemplos):
-  python multi_doc_extract.py https://example.com/docs --depth 3 --llm --out docs_outputs
-  python multi_doc_extract.py https://example.com/docs --depth 2 --out docs_outputs
+  python docs-to-markdown.py https://example.com/docs --llm --doc_name example_docs
+  python docs-to-markdown.py https://example.com/docs --doc_name example_docs
 
 Requisitos:
   pip install "crawl4ai[all]" python-dotenv
@@ -90,12 +90,12 @@ def is_same_domain(base_domain: str, link: str) -> bool:
         return False
     return (parsed.netloc == base_domain) or parsed.netloc.endswith(f".{base_domain}")
 
-def build_local_filepath(output_dir: str, url: str) -> str:
+def build_local_filepath(output_dir: str, doc_name: str, url: str) -> str:
     """
     Genera la ruta local replicando la estructura de subcarpetas
     según el path de la URL. E.g.:
       URL: https://example.com/docs/intro/getting-started.html
-      => docs_outputs/docs/intro/getting-started.html.md
+      => docs_outputs/example_docs/docs/intro/getting-started.html.md
     """
     parsed = urlparse(url)
     # path sin el primer '/'
@@ -108,7 +108,7 @@ def build_local_filepath(output_dir: str, url: str) -> str:
     if not filename:
         filename = "index.html"             # si path terminaba en '/'
 
-    local_dir = os.path.join(output_dir, dirname)
+    local_dir = os.path.join(output_dir, doc_name, dirname)
     os.makedirs(local_dir, exist_ok=True)
 
     final_name = filename + ".md"
@@ -116,31 +116,27 @@ def build_local_filepath(output_dir: str, url: str) -> str:
 
 async def crawl_all_docs(
     start_url: str,
-    max_depth: int = None,
-    output_dir: str = None,
+    doc_name: str,
     use_llm: bool = False
 ) -> None:
     """
     BFS: rastrea la doc y extrae Markdown, respetando estructura de carpetas.
     - start_url: URL principal
-    - max_depth: nivel máximo de enlaces (default desde .env)
-    - output_dir: carpeta raíz de salida (default desde .env)
+    - doc_name: nombre de la carpeta para esta documentación
     - use_llm: True => LLMContentFilter, False => PruningContentFilter
     """
+    # Obtener configuración desde .env
+    max_depth = int(os.getenv("MAX_DEPTH", 2))
+    output_dir = os.getenv("OUTPUT_DIR", "docs_outputs")
+
     # Mostrar configuración inicial
     console.print(Panel.fit(
         f"[bold green]Starting crawler[/]\n"
         f"URL: [cyan]{start_url}[/]\n"
-        f"Depth: [cyan]{max_depth or os.getenv('MAX_DEPTH', 2)}[/]\n"
-        f"Output: [cyan]{output_dir or os.getenv('OUTPUT_DIR', 'docs_outputs')}[/]\n"
+        f"Depth: [cyan]{max_depth}[/]\n"
+        f"Output: [cyan]{output_dir}/{doc_name}[/]\n"
         f"Filter: [cyan]{'LLM' if use_llm else 'Heuristic'}[/]"
     ))
-
-    # Usar valores del .env como defaults
-    if max_depth is None:
-        max_depth = int(os.getenv("MAX_DEPTH", 2))
-    if output_dir is None:
-        output_dir = os.getenv("OUTPUT_DIR", "docs_outputs")
 
     parsed = urlparse(start_url)
     base_domain = parsed.netloc
@@ -185,7 +181,7 @@ async def crawl_all_docs(
         max_session_permit=5
     )
 
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(os.path.join(output_dir, doc_name), exist_ok=True)
 
     async with AsyncWebCrawler(config=browser_cfg) as crawler:
         with Progress(
@@ -234,7 +230,7 @@ async def crawl_all_docs(
                             md = result.markdown or ""
 
                         # Generar ruta local replicando path
-                        local_md_file = build_local_filepath(output_dir, result.url)
+                        local_md_file = build_local_filepath(output_dir, doc_name, result.url)
                         with open(local_md_file, "w", encoding="utf-8") as f:
                             f.write(md)
 
@@ -260,17 +256,15 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description="Crawler BFS multi-url con subdirectorios")
     parser.add_argument("start_url", help="URL inicial (documentación)")
-    parser.add_argument("--depth", type=int, help=f"Profundidad máxima (default={os.getenv('MAX_DEPTH', 2)})")
+    parser.add_argument("--doc_name", required=True, help="Nombre de la carpeta para esta documentación")
     parser.add_argument("--llm", action="store_true", help="Activar filtrado con LLMContentFilter")
-    parser.add_argument("--out", help=f"Carpeta de salida para .md (default={os.getenv('OUTPUT_DIR', 'docs_outputs')})")
     return parser.parse_args()
 
 async def main_cli():
     args = parse_args()
     await crawl_all_docs(
         start_url=args.start_url,
-        max_depth=args.depth,
-        output_dir=args.out,
+        doc_name=args.doc_name,
         use_llm=args.llm
     )
 

@@ -8,9 +8,9 @@ A Python-based tool that uses Crawl4AI to extract documentation from websites an
 - **Content Filtering**: Removes irrelevant content (menus, footers, sidebars)
   - Heuristic-based filtering (default)
   - LLM-based filtering (optional, requires OpenAI API key)
-- **Directory Structure Preservation**: Replicates the source site's structure
+- **Directory Structure Preservation**: Replicates the source site's structure within named documentation folders
 - **Real-time Progress**: Rich console output with progress bars and statistics
-- **Configurable**: Command-line options for depth, output directory, and filtering
+- **Configurable**: Environment variables for depth and output directory, command-line options for filtering
 
 ## Installation
 
@@ -22,43 +22,59 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 2. Install dependencies:
 ```bash
-pip install "crawl4ai[all]"
+pip install "crawl4ai[all]" python-dotenv
 ```
 
-3. (Optional) For LLM-based filtering, set up your OpenAI API key:
+3. Configure environment variables in .env:
 ```bash
-echo "OPENAI_API_KEY=your-api-key-here" > .env
+# Required for LLM-based filtering
+OPENAI_API_KEY=your-api-key-here
+
+# Optional configurations (shown with defaults)
+MAX_DEPTH=2
+OUTPUT_DIR=docs_outputs
 ```
 
 ## Usage
 
 Basic usage:
 ```bash
-python multi_doc_extract.py https://example.com/docs --depth 2 --out docs_outputs
+python docs-to-markdown.py https://example.com/docs --doc_name example_docs
 ```
 
 With LLM filtering:
 ```bash
-python multi_doc_extract.py https://example.com/docs --depth 2 --out docs_outputs --llm
+python docs-to-markdown.py https://example.com/docs --doc_name example_docs --llm
 ```
 
 ### Command Line Options
 
 - `start_url`: Initial documentation URL (required)
-- `--depth`: Maximum crawling depth (default: 2)
-- `--out`: Output directory for markdown files (default: docs_outputs)
+- `--doc_name`: Name of the folder where documentation will be saved (required)
 - `--llm`: Enable LLM-based content filtering (requires OpenAI API key)
+
+### Environment Variables
+
+- `MAX_DEPTH`: Maximum crawling depth (default: 2)
+- `OUTPUT_DIR`: Base output directory for markdown files (default: docs_outputs)
+- `OPENAI_API_KEY`: Required for LLM-based filtering
 
 ## Example Output Structure
 
 ```
 docs_outputs/
-├── section1/
-│   ├── page1.md
-│   └── subsection/
-│       └── page2.md
-└── section2/
-    └── page3.md
+├── project1_docs/           # --doc_name project1_docs
+│   ├── section1/
+│   │   ├── page1.md
+│   │   └── subsection/
+│   │       └── page2.md
+│   └── section2/
+│       └── page3.md
+└── project2_docs/           # --doc_name project2_docs
+    ├── intro/
+    │   └── getting-started.md
+    └── api/
+        └── reference.md
 ```
 
 ## Features in Detail

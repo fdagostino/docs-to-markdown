@@ -25,15 +25,15 @@
 1. **Environment Variables** (.env)
    ```
    OPENAI_API_KEY=sk-...  # Required for LLM filtering
-   MAX_DEPTH=2            # Default crawl depth
-   OUTPUT_DIR=docs_outputs # Default output directory
+   MAX_DEPTH=2            # Crawl depth
+   OUTPUT_DIR=docs_outputs # Base output directory
    ```
 
 2. **Command Line Options**
    ```
-   --depth     # Override default depth
+   start_url   # Initial documentation URL
+   --doc_name  # Name of the folder for this documentation
    --llm       # Enable LLM filtering
-   --out       # Override output directory
    ```
 
 ## Project Structure
@@ -43,8 +43,10 @@
 ├── .env                   # Environment variables
 ├── .gitignore            # Git ignore rules
 ├── memory-bank/          # Project documentation
-├── docs_outputs/         # Generated markdown files
-└── multi_doc_extract.py  # Main script
+├── docs_outputs/         # Base directory for all documentation
+│   ├── project1_docs/    # Documentation for project 1
+│   └── project2_docs/    # Documentation for project 2
+└── docs-to-markdown.py   # Main script
 ```
 
 ## Development Setup

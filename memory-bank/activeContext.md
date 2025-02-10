@@ -4,20 +4,26 @@
 The project has a fully functional implementation with the following features:
 - BFS crawling of documentation sites
 - Content filtering (LLM and heuristic)
-- Directory structure preservation
-- Environment variable configuration
+- Directory structure preservation with named documentation folders
+- Environment variable configuration (MAX_DEPTH, OUTPUT_DIR)
 - Enhanced console logging with progress bars
 - Real-time crawling statistics
 - Successful testing with gluestack.io documentation
 
 ## Recent Changes
-1. Enhanced Logging Implementation
+1. **Script Renaming and Configuration**
+   - Renamed script to docs-to-markdown.py
+   - Moved depth and output configuration to .env
+   - Added --doc_name parameter for documentation organization
+   - Updated directory structure to support multiple documentations
+
+2. **Enhanced Logging Implementation**
    - Added progress bars for batch processing
    - Implemented real-time statistics tracking
    - Added URL processing status indicators
    - Improved error reporting
 
-2. Testing with gluestack.io
+3. **Testing with gluestack.io**
    - Successfully crawled documentation
    - Verified directory structure preservation
    - Validated content filtering
@@ -35,10 +41,10 @@ The project has a fully functional implementation with the following features:
    - Design backoff strategy for rate limits
 
 ## Active Decisions
-1. **Rate Limiting Strategy**
-   - Design adaptive rate limiting based on server response
-   - Implement configurable limits per domain
-   - Add automatic backoff on 429 responses
+1. **Configuration Strategy**
+   - MAX_DEPTH and OUTPUT_DIR moved to .env for centralized configuration
+   - Added --doc_name parameter for better organization
+   - Support for multiple documentation sets in output directory
 
 2. **Memory Management**
    - Implement dynamic batch size adjustment

@@ -42,4 +42,4 @@ logs/
 tmp/
 
 # Project specific
-docs_outputs/
+docs/

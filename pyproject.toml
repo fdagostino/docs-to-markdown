@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docs-to-markdown"
+version = "0.1.0"
+description = "A tool to crawl documentation sites and convert them to Markdown format"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT License"}
+dependencies = [
+  "crawl4ai[all]",
+  "python-dotenv",
+  "requests>=2.31.0",
+  "packaging>=23.2",
+  "rich>=13.7.0",
+  "importlib-metadata>=7.0.1; python_version < '3.8'"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Documentation",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11"
+]
+
+[[project.authors]]
+name = "Francisco D'Agostino"
+
+[project.urls]
+"Homepage" = "https://github.com/fdagostino/docs-to-markdown"
+
+[project.scripts]
+"docs-to-markdown" = "docs_to_markdown:main_cli"

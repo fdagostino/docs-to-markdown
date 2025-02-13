@@ -1,0 +1,6 @@
+crawl4ai[all]
+python-dotenv
+requests>=2.31.0
+packaging>=23.2
+rich>=13.7.0
+importlib-metadata>=7.0.1; python_version < "3.8"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docs-to-markdown"
-version = "0.1.0"
+version = "0.1.1"
 description = "A tool to crawl documentation sites and convert them to Markdown format"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -37,4 +37,4 @@ name = "Francisco D'Agostino"
 "Homepage" = "https://github.com/fdagostino/docs-to-markdown"
 
 [project.scripts]
-"docs-to-markdown" = "docs_to_markdown:main_cli"
+"docs-to-markdown" = "docs_to_markdown:main"

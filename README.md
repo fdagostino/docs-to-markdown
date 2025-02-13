@@ -1,9 +1,11 @@
 # docs-to-markdown 🚀 | Convert online documentation into Markdown by simply providing a URL
 
-Perfect for converting libraries, SDKs, and other documentation for use with LLMs and AI Agents.
+Perfect for converting APIs docs, libraries docs, SDKs docs, and any other type of tech documentation for use with LLMs, AI Agents, Cursor, Tailwind, Cline, etc.
 
 ## What is docs-to-markdown?  
-docs-to-markdown is a simple and fast tool that crawls online documentation from a given URL and converts it into Markdown files. Just provide the URL of the documentation you want to convert, and the tool will handle the rest. Whether you need a single consolidated file or multiple files, it streamlines your workflow for feeding content into your LLM and optimizing your AI prompts.
+docs-to-markdown is a simple and fast tool that crawls online documentation from a given URL and converts it into Markdown files. 
+Just provide the URL of the documentation you want to convert, and the tool will handle the rest. 
+Whether you need a single consolidated file or multiple files, it streamlines your workflow for feeding content into your LLM and optimizing your AI prompts.
 
 ## Features ✨  
 - **Flexible Conversion:** Convert documentation into one file or split into multiple files based on your needs.
